@@ -1,0 +1,659 @@
+/* ═══════════════════════════════════════════════════════════════
+   ÓMBRE · Stay in the shadow.
+   Pale stone, ink shadow palette · Mobile-first · Quiet by design
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+   Color is state, not decoration. The vermillion accent appears
+   only when a session is active — that's the only animation
+   the eye does during deep work.
+   ────────────────────────────────────────────────────────────── */
+:root {
+  /* Surface */
+  --c-stone:      #F2EFE8;  /* primary background — warm off-white */
+  --c-stone-2:    #EBE7DD;  /* slight elevation */
+  --c-stone-3:    #E5E0D2;  /* deeper surface */
+
+  /* Text + structure */
+  --c-ink:        #1F1D18;  /* primary ink — body, timer, mark */
+  --c-smoke:      #5C5852;  /* secondary text */
+  --c-sand:       #B8AE99;  /* tertiary text, subtle borders */
+  --c-sand-soft:  rgba(31, 29, 24, 0.10);
+  --c-sand-line:  rgba(31, 29, 24, 0.18);
+
+  /* Accent — used ONLY for active-session state.
+     Vermillion is a deep warm red. Not orange, not crimson — vermillion.
+     It signals work happening; nothing else. */
+  --c-vermillion: #8C2818;
+  --c-vermillion-soft: rgba(140, 40, 24, 0.10);
+
+  /* Type — three voices for three jobs */
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — restrained. Most of the screen is one of two sizes. */
+  --fs-xs:  0.7rem;     /* 11.2px */
+  --fs-sm:  0.85rem;    /* 13.6px */
+  --fs-md:  1rem;       /* 16px */
+  --fs-lg:  1.18rem;    /* 18.9px */
+  --fs-xl:  1.5rem;     /* 24px */
+  --fs-2xl: 1.85rem;    /* 29.6px */
+  --fs-timer: clamp(4.5rem, 18vw, 8rem); /* fluid timer numerals */
+
+  /* Spacing */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-quiet: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   RESET
+   ────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+button { background: none; border: none; font: inherit; color: inherit; cursor: pointer; }
+input { font: inherit; color: inherit; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+  color: var(--c-ink);
+  background: var(--c-stone);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Allow color transitions when entering/leaving active state */
+  transition: background-color 0.5s var(--ease-quiet);
+}
+
+/* When the timer is active, the background shifts almost imperceptibly
+   warmer. Subliminal cue that work is happening. */
+body.is-live {
+  background-color: var(--c-stone);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   STAGE LAYOUT — single column, generous whitespace
+   ────────────────────────────────────────────────────────────── */
+.stage {
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  padding: var(--sp-5) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+@media (min-width: 600px) {
+  .stage { padding: var(--sp-6) var(--sp-5); gap: var(--sp-7); }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   TOPBAR — wordmark + meta
+   ────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+/* The wordmark IS the brand. Italic serif, lowercase except Ó. */
+.wordmark {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.015em;
+  color: var(--c-ink);
+  line-height: 1;
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-weight: 300;
+  font-size: var(--fs-xs);
+  color: var(--c-sand);
+  letter-spacing: 0.06em;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   TIMER COLUMN
+   ────────────────────────────────────────────────────────────── */
+.timer-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--sp-5);
+  padding: var(--sp-5) 0;
+}
+
+/* ── Presets — shown only in idle state ── */
+.presets {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  justify-content: center;
+  transition: opacity 0.3s var(--ease-out), height 0.3s var(--ease-out);
+}
+
+.presets[hidden] { display: none; }
+
+.preset {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border: 0.5px solid var(--c-sand-line);
+  border-radius: var(--r-sm);
+  color: var(--c-smoke);
+  background: transparent;
+  transition: all 0.2s var(--ease-out);
+  cursor: pointer;
+}
+
+.preset:hover {
+  border-color: var(--c-ink);
+  color: var(--c-ink);
+}
+
+.preset.is-active {
+  background: var(--c-ink);
+  color: var(--c-stone);
+  border-color: var(--c-ink);
+}
+
+/* When session is live, the active preset goes vermillion */
+body.is-live .preset.is-active {
+  background: var(--c-vermillion);
+  border-color: var(--c-vermillion);
+}
+
+/* ── Time display — the centerpiece ── */
+.time {
+  font-family: var(--font-mono);
+  font-weight: 300;
+  font-size: var(--fs-timer);
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--c-ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  transition: color 0.4s var(--ease-quiet), opacity 0.4s var(--ease-quiet);
+  /* Subtle padding-top so descenders don't clip on tall renderings */
+  padding-top: 0.05em;
+}
+
+body.is-live .time { color: var(--c-vermillion); }
+body.is-done .time { color: var(--c-ink); opacity: 0.4; }
+
+/* ── Status line — italic serif, soft ── */
+.status {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-lg);
+  color: var(--c-smoke);
+  transition: color 0.4s var(--ease-quiet);
+  min-height: 1.5em;
+  /* Allow JS to set custom text without layout shift on long phrases */
+  max-width: 28ch;
+}
+
+body.is-live .status { color: var(--c-vermillion); }
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 12px 28px;
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--c-ink);
+  cursor: pointer;
+  transition: all 0.18s var(--ease-out);
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+.btn:active { transform: translateY(1px); }
+
+.btn-solid {
+  background: var(--c-ink);
+  color: var(--c-stone);
+}
+
+.btn-solid:hover {
+  background: var(--c-vermillion);
+  border-color: var(--c-vermillion);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--c-ink);
+}
+
+.btn-ghost:hover {
+  background: var(--c-stone-2);
+  border-color: var(--c-ink);
+}
+
+.btn[hidden] { display: none; }
+
+/* ──────────────────────────────────────────────────────────────
+   NOISE TOGGLE — quiet, undecorated
+   ────────────────────────────────────────────────────────────── */
+.noise {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-top: var(--sp-5);
+  border-top: 0.5px solid var(--c-sand-soft);
+}
+
+.noise-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.noise-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--c-smoke);
+  letter-spacing: 0.02em;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s var(--ease-out);
+}
+
+.noise-toggle:hover { color: var(--c-ink); }
+
+.noise-toggle[aria-pressed="true"] {
+  color: var(--c-vermillion);
+}
+
+.noise-pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-sand);
+  transition: background 0.3s var(--ease-out), box-shadow 0.4s var(--ease-out);
+  flex-shrink: 0;
+}
+
+.noise-toggle[aria-pressed="true"] .noise-pip {
+  background: var(--c-vermillion);
+  box-shadow: 0 0 0 4px var(--c-vermillion-soft);
+}
+
+.noise-label { user-select: none; }
+
+.noise-help {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 0.5px solid var(--c-sand-line);
+  background: transparent;
+  color: var(--c-sand);
+  font-size: 11px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  transition: all 0.2s var(--ease-out);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.noise-help:hover {
+  border-color: var(--c-ink);
+  color: var(--c-ink);
+}
+
+/* Three-color picker — same visual pattern as the duration presets */
+.noise-colors {
+  display: flex;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ncolor {
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  border: 0.5px solid var(--c-sand-line);
+  border-radius: var(--r-sm);
+  color: var(--c-smoke);
+  background: transparent;
+  transition: all 0.2s var(--ease-out);
+  cursor: pointer;
+}
+
+.ncolor:hover {
+  border-color: var(--c-ink);
+  color: var(--c-ink);
+}
+
+.ncolor.is-active {
+  background: var(--c-ink);
+  color: var(--c-stone);
+  border-color: var(--c-ink);
+}
+
+/* When session is live AND noise is on, the active color goes vermillion */
+body.is-live .noise-toggle[aria-pressed="true"] ~ .noise-colors .ncolor.is-active,
+.noise-toggle[aria-pressed="true"] ~ .noise-colors .ncolor.is-active {
+  background: var(--c-vermillion);
+  border-color: var(--c-vermillion);
+}
+
+/* The waveform line — flat when inactive, breathes when active */
+.noise-wave {
+  width: 120px;
+  height: 14px;
+  color: var(--c-sand);
+  transition: color 0.3s var(--ease-out);
+  flex-shrink: 0;
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .noise-wave { display: block; }
+}
+
+.noise-wave svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.noise-toggle[aria-pressed="true"] ~ .noise-wave,
+.noise[aria-label] .noise-toggle[aria-pressed="true"] ~ * .noise-wave {
+  color: var(--c-vermillion);
+}
+
+/* When noise is on, color the wave vermillion via parent state */
+.noise:has(.noise-toggle[aria-pressed="true"]) .noise-wave {
+  color: var(--c-vermillion);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   VOLUME SLIDER — only visible while noise is on
+   ────────────────────────────────────────────────────────────── */
+.volume {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  max-width: 320px;
+  margin: 0 auto;
+  width: 100%;
+  animation: fadeInUp 0.3s var(--ease-out);
+}
+
+.volume[hidden] { display: none; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.volume-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-sand);
+  flex-shrink: 0;
+}
+
+/* Custom slider — minimal, ink-on-stone */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 2px;
+  background: var(--c-sand-line);
+  border-radius: 1px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--c-ink);
+  cursor: grab;
+  transition: transform 0.15s var(--ease-out), background 0.2s var(--ease-out);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--c-ink);
+  border: none;
+  cursor: grab;
+  transition: transform 0.15s var(--ease-out);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+
+body.is-live input[type="range"]::-webkit-slider-thumb { background: var(--c-vermillion); }
+body.is-live input[type="range"]::-moz-range-thumb     { background: var(--c-vermillion); }
+
+/* ──────────────────────────────────────────────────────────────
+   MODAL
+   ────────────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 29, 24, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  padding: var(--sp-3);
+  animation: fade 0.2s var(--ease-out);
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Critical override — without this, hidden attribute is overridden by display:grid */
+.modal-backdrop[hidden] { display: none !important; }
+
+.modal {
+  background: var(--c-stone);
+  border: 0.5px solid var(--c-sand-line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  width: 100%;
+  max-width: 440px;
+  animation: slideUp 0.3s var(--ease-out);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--sp-3);
+}
+
+.modal-head h2 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-xl);
+  color: var(--c-ink);
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  font-size: 22px;
+  color: var(--c-smoke);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.18s var(--ease-out);
+  padding: 0;
+}
+
+.icon-btn:hover { background: var(--c-stone-2); color: var(--c-ink); }
+
+.modal-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  color: var(--c-smoke);
+  margin-bottom: var(--sp-3);
+}
+
+.modal-fine {
+  font-size: var(--fs-xs);
+  color: var(--c-sand);
+}
+
+/* Definitions list inside help modal — three noise types explained */
+.noise-defs {
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3);
+  background: var(--c-stone-2);
+  border-radius: var(--r-md);
+}
+
+.noise-defs dt {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-md);
+  color: var(--c-ink);
+  margin-top: var(--sp-2);
+}
+
+.noise-defs dt:first-child { margin-top: 0; }
+
+.noise-defs dd {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--c-smoke);
+  margin: 2px 0 var(--sp-1) 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--sp-4);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   TOAST
+   ────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--c-ink);
+  color: var(--c-stone);
+  padding: 10px 18px;
+  border-radius: var(--r-md);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-sm);
+  z-index: 200;
+  opacity: 0;
+  transition:
+    opacity 0.3s var(--ease-out),
+    transform 0.3s var(--ease-out);
+  max-width: calc(100vw - 32px);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast[hidden] { display: none !important; }
+
+/* ──────────────────────────────────────────────────────────────
+   ACCESSIBILITY
+   ────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Focus-visible — only show outline for keyboard users */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--c-vermillion);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}

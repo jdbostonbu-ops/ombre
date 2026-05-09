@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2EFE8">
+<meta name="description" content="Ómbre — a deep work environment. Pomodoro timer with procedurally-generated brown noise. Stay in the shadow.">
+
+<title>Ómbre — Stay in the shadow.</title>
+
+<!-- PWA basics -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ómbre">
+
+<!--
+  Three typefaces for three jobs:
+  - Cormorant Garamond (italic serif) for wordmark + soft status lines
+  - IBM Plex Mono for the timer numerals (tabular, tnum)
+  - Inter for utility UI text (buttons, labels)
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Mono:wght@300;400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     Single-screen layout. No nav, no menus, no distractions.
+     The session itself is the content.
+     ═══════════════════════════════════════════════════════════ -->
+<main class="stage" id="stage">
+
+  <!-- ── Top bar: wordmark + tiny meta line ── -->
+  <header class="topbar">
+    <h1 class="wordmark">Ómbre</h1>
+    <span class="meta">v.1 · local</span>
+  </header>
+
+  <!-- ── Timer column: presets, big numerals, status, controls ── -->
+  <section class="timer-col">
+
+    <!-- Duration presets — only shown in idle state, hidden during a session -->
+    <div class="presets" id="presets" role="radiogroup" aria-label="Session length">
+      <button type="button" class="preset is-active" data-minutes="25" role="radio" aria-checked="true">25 min</button>
+      <button type="button" class="preset" data-minutes="50" role="radio" aria-checked="false">50 min</button>
+      <button type="button" class="preset" data-minutes="90" role="radio" aria-checked="false">90 min</button>
+    </div>
+
+    <!-- Timer display: M:SS or MM:SS -->
+    <div class="time" id="time" aria-live="polite" aria-atomic="true">25:00</div>
+
+    <!-- Soft status line in italic serif -->
+    <p class="status" id="status">Settle in.</p>
+
+    <!-- Action buttons. Begin / Pause / Resume / Reset / Again / Done — JS swaps these -->
+    <div class="controls" id="controls">
+      <button type="button" class="btn btn-solid" id="primaryBtn">Begin</button>
+      <button type="button" class="btn btn-ghost" id="secondaryBtn" hidden>Reset</button>
+    </div>
+
+  </section>
+
+  <!-- ── Noise: toggle + 3-color picker ── -->
+  <section class="noise" aria-label="Background noise">
+    <div class="noise-row">
+      <button type="button" class="noise-toggle" id="noiseToggle" aria-pressed="false">
+        <span class="noise-pip" id="noisePip" aria-hidden="true"></span>
+        <span class="noise-label" id="noiseLabel">Brown noise</span>
+      </button>
+      <button type="button" class="noise-help" id="noiseHelp" aria-label="What is brown noise?">?</button>
+    </div>
+    <!-- Color picker — three options, brown active by default -->
+    <div class="noise-colors" id="noiseColors" role="radiogroup" aria-label="Noise color">
+      <button type="button" class="ncolor is-active" data-noise="brown" role="radio" aria-checked="true">Brown</button>
+      <button type="button" class="ncolor" data-noise="pink" role="radio" aria-checked="false">Pink</button>
+      <button type="button" class="ncolor" data-noise="white" role="radio" aria-checked="false">White</button>
+    </div>
+    <div class="noise-wave" id="noiseWave" aria-hidden="true">
+      <svg viewBox="0 0 120 14" preserveAspectRatio="none">
+        <path id="wavePath1" d="M0 7 L120 7" stroke="currentColor" stroke-width="0.6" fill="none"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ── Volume slider — only visible when noise is on ── -->
+  <section class="volume" id="volume" hidden>
+    <label for="volSlider" class="volume-label">Volume</label>
+    <input type="range" id="volSlider" min="0" max="100" value="60" step="1" aria-label="Brown noise volume">
+  </section>
+
+</main>
+
+<!-- ════════════════════════════════════════════════════════════
+     Help dialog — explains brown noise without leaving the page
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="modal">
+    <header class="modal-head">
+      <h2 id="helpTitle">Background noise</h2>
+      <button type="button" class="icon-btn" id="helpCloseBtn" aria-label="Close">×</button>
+    </header>
+    <p class="modal-body">All three are continuous random sounds, generated mathematically in your browser. No file is downloaded; the sound never repeats.</p>
+
+    <dl class="noise-defs">
+      <dt>Brown</dt>
+      <dd>A deep, smooth low-frequency sound — like rain on a window or a distant waterfall. The bass dominates. Most people find it the most calming for long sessions; least fatiguing.</dd>
+      <dt>Pink</dt>
+      <dd>Steadier and slightly brighter than brown. Like steady rainfall or wind through trees. Often used by audio engineers for room calibration. A middle ground.</dd>
+      <dt>White</dt>
+      <dd>All frequencies at equal power. Crisp, hissy, like an untuned analog TV. Strongest masking of sudden environmental sounds, but more fatiguing over long sessions.</dd>
+    </dl>
+
+    <p class="modal-body modal-fine">Try one for a few minutes. If a color doesn't suit you, switch or turn it off — Ómbre's job is to disappear, not to convince you.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-solid" id="helpDoneBtn">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     Toast — soft transient feedback (e.g., "Session begun")
+     ═══════════════════════════════════════════════════════════ -->
+<div class="toast" id="toast" aria-live="polite" aria-atomic="true" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>

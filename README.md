@@ -163,6 +163,15 @@ iOS Safari and Chrome mobile won't let an `AudioContext` produce sound until the
 
 The result: audio that just works on phone, tablet, laptop — without permission dialogs, without errors, without the "tap to enable sound" friction every other audio web app shows.
 
+If you installed Ómbre to the home screen earlier today and we've shipped changes since, your home-screen version might be cached. Do this dance:
+
+1. Long-press the Ómbre icon on your home screen
+2. Tap Remove App → Delete from Home Screen
+3. Open Safari, visit your Ómbre URL fresh
+4. Pull down to refresh the page
+5. Tap Share → Add to Home Screen → Add
+6. Open the fresh icon — try the noise toggle immediately
+
 ## 🔐 Architecture Overview
 
 ```
